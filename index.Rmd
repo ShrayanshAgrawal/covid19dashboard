@@ -1,0 +1,207 @@
+---
+title: "Analysis of Covid-19"
+output: 
+  flexdashboard::flex_dashboard:
+    theme:
+      version: 4
+      bg: "#101010"
+      fg: "#FDF7F7" 
+      primary: "#ED79F9"
+      navbar-bg: "#3ADAC6"
+      base_font: 
+        google: Prompt
+      heading_font:
+        google: Sen
+    orientation: columns
+    vertical_layout: fill
+    social: ["twitter","facebook","linkedin","menu"]
+    source_code: https://github.com/BIT-SIZE/R_dashboard
+    navbar:
+      - { icon: "fa-info-circle", title: "About", href: "#team" }
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+library(readr)
+library(plotly)
+library(dplyr)
+library(tidyr)
+library(DT)
+library(tidyverse)
+setwd("C:/Users/hiten/OneDrive/Desktop/MAIN/PERSONAL/Programming  in R/dashboard")
+```
+
+# Overview
+
+Column {.tabset .tabset-fade data-width=600}
+-----------------------------------------------------------------------
+### Confirmed Cases vs Deaths by countries
+
+```{r}
+covid_19<-read.csv("Corrected_Monthly_COVID19_Data.csv")
+plot_ly(data=covid_19,x=~Confirmed,y=~Deaths,z=~Country,type = "scatter3d",mode="markers",frame=~Date)
+```
+
+### Date vs Vaccinated by countries
+```{r}
+plot_ly(data=covid_19,x=~Date,y=~Vaccinated,type = "scatter",mode="lines",hovertemplate="Date: %{x} <br> Vaccinated: %{y}",
+        transforms = list(
+          list(
+            type = "filter",
+            target = ~Country,
+            operation = "=",
+            value = 'USA'
+          )
+        ))%>%
+  layout(
+    updatemenus = list(
+      list(
+        buttons = lapply(unique(covid_19$Country),function(cat){
+          list(method = "restyle",
+               args = list("transforms[0].value", cat),
+               label = cat)
+          
+        }),
+        direction = "down"
+      )
+    )
+  )
+```
+
+### Ratio of Covishield and Covaxin
+
+```{r}
+covid_long <- covid_19 %>%
+  pivot_longer(cols = c(Covishield, Covaxin),
+               names_to = "Vaccine",
+               values_to = "Count")
+
+plot_ly(data = covid_long,
+        labels = ~Vaccine,
+        values = ~Count,
+        type = "pie",
+        frame = ~Date,
+        marker = list(colors = c("#3d5a80","#98c1d9")),
+        transforms = list(
+          list(
+            type = "filter",
+            target = ~Country,
+            operation = "=",
+            value = 'USA'
+          )
+        )) %>%
+  layout(
+    updatemenus = list(
+      list(
+        buttons = lapply(unique(covid_long$Country), function(country) {
+          list(
+            method = "restyle",
+            args = list("transforms[0].value", country),
+            label = country
+          )
+        }),
+        direction = "down",
+        showactive = TRUE
+     )
+    )
+  )
+```
+Column {data-width=400}
+-----------------------------------------------------------------------
+
+### Death ratio by Age
+
+```{r}
+covid_death<-covid_19 %>%
+  pivot_longer(cols=c(Deaths_0_17,Deaths_18_44,Deaths_45_60,Deaths_60_plus),
+               names_to="Death",
+               values_to = "Counts")
+
+plot_ly(data = covid_death,
+        labels = ~Death,
+        values = ~Counts,
+        type = "pie",
+        frame = ~Date)
+```
+
+### Comfirmed vs Deaths by Filtering Countries
+
+```{r}
+plot_ly(data=covid_19,x=~Confirmed,y=~Deaths,type = "scatter",mode="markers",color = ~Date,
+        transforms = list(
+          list(
+            type = "filter",
+            target = ~Country,
+            operation = "=",
+            value = 'USA'
+          )
+        ))%>%
+  layout(
+    updatemenus = list(
+      list(
+        buttons = lapply(unique(covid_19$Country),function(cat){
+          list(method = "restyle",
+               args = list("transforms[0].value", cat),
+               label = cat)
+          
+        }),
+        direction = "down"
+      )
+    )
+  )
+```
+
+#  {#team}
+
+Column {data-width=300}
+---
+
+### valuebox 1
+
+```{r}
+  valueBox(
+    value = "Hiten Hemnani",
+    caption = "Developer",
+    icon = "fa-user",
+    color = "purple"
+  )
+```
+
+Column {data-width=300}
+---
+###
+  
+```{r}
+  valueBox(
+    value = "Shrayansh Agrawal",
+    caption = "Data Analyst",
+    icon = "fa-user",
+    color = "info"
+  )
+```
+  
+  Column {data-width=300}
+---
+
+###  
+
+```{r}
+  valueBox(
+    value = "Taher Nawab",
+    caption = "UI/UX Designer",
+    icon = "fa-user",
+    color = "primary"
+  )
+```
+
+# Data Table
+
+### Covid-19 Raw data table
+
+```{r}
+datatable(covid_19, 
+          options = list(pageLength = 10, autoWidth = TRUE),
+          filter = 'top',
+          rownames = FALSE)
+```
